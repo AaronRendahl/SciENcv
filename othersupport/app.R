@@ -17,8 +17,8 @@ ui <- fluidPage(
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
-      fileInput("upload", "Upload a file"),
         sidebarPanel(
+          fileInput("upload", "Upload a file"),
             sliderInput("bins",
                         "Number of bins:",
                         min = 1,
