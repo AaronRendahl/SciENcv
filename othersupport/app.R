@@ -15,6 +15,7 @@ library(xml2)
 library(shiny)
 conflicts_prefer(dplyr::filter, dplyr::lag)
 
+samplelink <- "https://docs.google.com/spreadsheets/d/1h3TJNpgWc5O1S7QEUeEePHlypPz27d9sCYfHFNuKNJ4/edit?usp=sharing"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -28,7 +29,7 @@ ui <- fluidPage(
           fileInput("upload", "Upload an Excel file with the right format:"),
           "Then download the XML file:",
           downloadButton("download"),
-          '<p><a href="https://docs.google.com/spreadsheets/d/1h3TJNpgWc5O1S7QEUeEePHlypPz27d9sCYfHFNuKNJ4/edit?usp=sharing">Sample spreadsheet format</a></p>'
+          tags$a(href=samplelink, "View Sample Spreadsheet", target="_blank")
         ),
 
         # Show a plot of the generated distribution
