@@ -29,7 +29,7 @@ ui <- fluidPage(
           fileInput("upload", "Upload an Excel file with the right format:"),
           "Then download the XML file:",
           downloadButton("download"),
-          tags$a(href=samplelink, "View Sample Spreadsheet", target="_blank")
+          tags$p(tags$a(href=samplelink, "View Sample Spreadsheet", target="_blank"), style="margin-top:4em;")
         ),
 
         # Show a plot of the generated distribution
