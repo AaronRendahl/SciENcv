@@ -7,45 +7,59 @@
 #    https://shiny.posit.co/
 #
 
+library(conflicted)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(xml2)
 library(shiny)
+conflicts_prefer(dplyr::filter, dplyr::lag)
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("SciENcv XML Other Support Conversion"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-          fileInput("upload", "Upload a file"),
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+          fileInput("upload", "Upload an Excel file with the right format:"),
+          "Then download the XML file:",
+          downloadButton("download")
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+          tableOutput("files"),
+          "Computed Person-Month Effort Per Year, Per Project:",
+          tableOutput("preview")
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+  data <- reactive({
+    req(input$upload)
+    readxl::read_excel(input$upload$datapath)
+  })
+  
+    output$files <- renderTable(input$upload)
+    
+    output$preview <- renderTable({
+      datx <- data() |> prepare_projects()
+      datx |> select(shorttitle, commitment) |> unnest(commitment)
     })
+    output$download <- downloadHandler(
+      filename = function() {
+        paste0(str_remove(input$upload$name, "\\.xlsx$"), ".xml")
+      },
+      content = function(file) {
+        data() |> prepare_projects() |> dat_to_xml() |> write_xml(file)
+      }
+    )
 }
 
 # Run the application 
