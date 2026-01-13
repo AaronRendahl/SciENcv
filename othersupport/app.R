@@ -20,14 +20,15 @@ conflicts_prefer(dplyr::filter, dplyr::lag)
 ui <- fluidPage(
 
     # Application title
-    titlePanel("SciENcv XML Other Support Conversion"),
+    titlePanel("SciENcv Other Support XML Conversion"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
           fileInput("upload", "Upload an Excel file with the right format:"),
           "Then download the XML file:",
-          downloadButton("download")
+          downloadButton("download"),
+          '<p><a href="https://docs.google.com/spreadsheets/d/1h3TJNpgWc5O1S7QEUeEePHlypPz27d9sCYfHFNuKNJ4/edit?usp=sharing">Sample spreadsheet format</a></p>'
         ),
 
         # Show a plot of the generated distribution
