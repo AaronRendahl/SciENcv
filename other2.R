@@ -13,12 +13,15 @@ googledrive::drive_download(
   overwrite=TRUE
 )
 
-file_xlsx <- "sample_v3.xlsx"
-d <- readxl::read_excel(file_xlsx)
+#file_xlsx <- "sample_v3.xlsx"
+file_xlsx <- "Copy of Sample Other Support v3.xlsx"
+d <- readxl::read_excel(file_xlsx) |>
+  mutate(shorttitle=as_factor(shorttitle))
 p <- d |> prepare_projects()
 
-p$.plot[[1]]
+p$.plot[[2]]
 all_effort_plot(p)
+
 
 
 p |> dat_to_xml() |> write_xml("sample2b.xml", options=c("format", "no_declaration"))

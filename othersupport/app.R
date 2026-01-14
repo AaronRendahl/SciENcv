@@ -20,7 +20,7 @@ samplelink <- tags$a(href=sampleurl, "View Sample Excel format", target="_blank"
 
 ui <- fluidPage(
   titlePanel("SciENcv Other Support XML Conversion"),
-  tags$style(HTML("div#plotId img {display: block; max-width: 100%;}")),
+  tags$style(HTML("img {display: block; max-width: 100%; height: auto;}")),
   fluidRow(
     column(6,
            samplelink,
@@ -31,8 +31,9 @@ ui <- fluidPage(
            downloadButton("download")
     )),
   fluidRow(
+    uiOutput("error_count"),
     uiOutput("plot_all"),
-    uiOutput("plotUI")
+    uiOutput("plots")
   )
 )
 
@@ -58,26 +59,39 @@ server <- function(input, output, session) {
   })
   
   r <- 1/4
-  w <- 800  
+  w <- 8
+  res <- 300
   
-  output$plotUI <- renderUI({
+  output$plots <- renderUI({
     p <- data()
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
-      sprintf("output %d/%d", i, n)
+      message(sprintf("project %d/%d...", i, n))
+      budgeti <- p$.budget[[i]] |> 
+        mutate("Budget Year" = 1:n(), .before=1) |>
+        mutate(months=monthdiff(b1, b2), .after="b2") |>
+        rename(start=b1, end=b2, "person-months"=effort) |>
+        mutate(across(c(start, end), format))
       tagList(
         h2(p$shorttitle[i]),
-        renderPlot(p$.plot[[i]], width=w, height=w*r, res=100)
+        tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
+        if(!is.na(p$.error[i])) tags$h5(paste("WARNING:", p$.error[i])) else NULL,
+        renderTable(budgeti),
+        renderPlot(p$.plot[[i]], width=w*res, height=w*r*res, res=res)
       )
     }))
   })
-  
+  output$error_count <- renderUI({
+    p <- data()
+    ne <- sum(!is.na(p$.error))
+    tag("p", sprintf("%d errors found.", ne))
+  })
   output$plot_all <- renderUI({
     p <- data()
     tagList(
       h2("All Combined"),
       renderPlot(all_effort_plot(p), 
-                 width=w, height=w*r, res=100)
+                 width=w*res, height=w*r*res, res=res)
     )
   })
   

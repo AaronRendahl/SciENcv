@@ -25,12 +25,12 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   date1 <- as.Date(date1)
   date2 <- as.Date(date2)
   budget <- as.Date(budget)
-  
+  error <- NA
   ## I assume date2 is the first day after it ends, however...
-  ## if the next day after the end is the same day of the month as it starts,
+  ## if the next day after the end is the same day of the month as the budget yearstarts,
   ## assume last date is actually the day before what's given
   ## and add a day.
-  if(day(date1) == day(date2+1)) {
+  if(day(budget) == day(date2+1)) {
     date2 <- date2 + 1
   }
   
@@ -41,8 +41,16 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   budgets <- as.Date(sprintf("%d-%02d-%02d", years, month(budget), day(budget)))
   budgets <- c(date1, budgets[budgets > date1 & budgets < date2], date2)
 
-  ## need to have effort equal to the number of budget years  
-  stopifnot(length(effort) == length(budgets) - 1) ## ERROR!
+  ne <- length(effort)
+  nb <- length(budgets) - 1L
+  ## ERROR: need to have effort equal to the number of budget years  
+  if(ne != nb) {
+    error <- sprintf("Years with effort (%d) not equal to the number of budget years (%d): %s", ne, nb,
+                     if(ne < nb) { "Setting missing effort years to zero." } 
+                     else if (ne > nb) {"Discarding extra effort years." })
+    effort <- effort[seq_len(nb)] |> replace_na(0)
+    warning(error)
+  } 
 
   ## table of budget periods and effort
   ef <- tibble(b1=budgets[-length(budgets)], b2=budgets[-1], effort=effort)
@@ -109,7 +117,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   if(!missing(daterange)) {
     effort_plot <- effort_plot + expand_limits(x=daterange)
   }
-  list(calendar=cal, budget=ef, plot=effort_plot)
+  list(calendar=cal, budget=ef, plot=effort_plot, error=error)
 }
 
 required_vars <- c("shorttitle", "projecttitle", "awardnumber", "supportsource", 
@@ -143,10 +151,12 @@ prepare_projects <- function(dat) {
     
     ## if there is any effort, process it and add it to the data set
     if(length(effort) > 0) {
+      message(dat1$shorttitle)
       ef <- process_effort(dat1$startdate, dat1$enddate, effort, budget_start, daterange=rr)
       d1$commitment <- list(ef$calendar)
       d1$.budget <- list(ef$budget)
       d1$.plot <- list(ef$plot)
+      d1$.error <- ef$error
     }
     d1
   }
