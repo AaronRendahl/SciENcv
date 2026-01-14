@@ -1261,6 +1261,41 @@
         "RemoteSha": "0.1.4"
       }
     },
+    "ggh4x": {
+      "Source": "CRAN",
+      "Repository": "https://cran.rstudio.com",
+      "description": {
+        "Package": "ggh4x",
+        "Title": "Hacks for 'ggplot2'",
+        "Version": "0.3.1",
+        "Authors@R": "\n    person(given = \"Teun\",\n           family = \"van den Brand\",\n           role = c(\"aut\", \"cre\"),\n           email = \"tahvdbrand@gmail.com\",\n           comment = c(ORCID = \"0000-0002-9335-7468\"))",
+        "Description": "A 'ggplot2' extension that does a variety of little\n    helpful things.  The package extends 'ggplot2' facets through\n    customisation, by setting individual scales per panel, resizing panels\n    and providing nested facets.  Also allows multiple colour and fill\n    scales per plot. Also hosts a smaller collection of stats, geoms and axis \n    guides.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://github.com/teunbrand/ggh4x,\nhttps://teunbrand.github.io/ggh4x/",
+        "BugReports": "https://github.com/teunbrand/ggh4x/issues",
+        "Depends": "ggplot2 (>= 3.5.2)",
+        "Imports": "grid, gtable, scales, vctrs (>= 0.5.0), rlang (>= 1.1.0),\nlifecycle, stats, cli, S7",
+        "Suggests": "covr, fitdistrplus, ggdendro, vdiffr, knitr, MASS, rmarkdown,\ntestthat (>= 3.0.0), utils",
+        "VignetteBuilder": "knitr",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "Config/testthat/edition": "3",
+        "Collate": "'at_panel.R' 'borrowed_ggplot2.R' 'conveniences.R'\n'ggh4x_extensions.R' 'coord_axes_inside.R' 'deprecated.R'\n'element_part_rect.R' 'facet_grid2.R' 'facet_wrap2.R'\n'facet_manual.R' 'facet_nested.R' 'facet_nested_wrap.R'\n'facetted_pos_scales.R' 'force_panelsize.R' 'geom_box.R'\n'geom_outline_point.R' 'geom_pointpath.R'\n'geom_polygonraster.R' 'geom_rectrug.R' 'geom_text_aimed.R'\n'ggh4x-package.R' 'guide_stringlegend.R' 'help_secondary.R'\n'position_disjoint_ranges.R' 'position_lineartrans.R'\n'scale_facet.R' 'scale_listed.R' 'scale_manual.R'\n'scale_multi.R' 'stat_difference.R' 'stat_funxy.R' 'stat_rle.R'\n'stat_roll.R' 'stat_theodensity.R' 'strip_vanilla.R'\n'strip_themed.R' 'strip_nested.R' 'strip_split.R' 'strip_tag.R'\n'themes.R' 'utils.R' 'utils_grid.R' 'utils_gtable.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-05-30 07:33:42 UTC; Teun",
+        "Author": "Teun van den Brand [aut, cre] (ORCID:\n    <https://orcid.org/0000-0002-9335-7468>)",
+        "Maintainer": "Teun van den Brand <tahvdbrand@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-05-30 08:00:01 UTC",
+        "Built": "R 4.5.0; ; 2025-05-30 08:22:56 UTC; unix",
+        "RemoteType": "standard",
+        "RemotePkgRef": "ggh4x",
+        "RemoteRef": "ggh4x",
+        "RemoteRepos": "https://cran.rstudio.com/",
+        "RemotePkgPlatform": "aarch64-apple-darwin20",
+        "RemoteSha": "0.3.1"
+      }
+    },
     "ggplot2": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -3769,10 +3804,10 @@
   },
   "files": {
     "app.R": {
-      "checksum": "79f56fc1b7eac0e293edd966516a65e4"
+      "checksum": "b21558c16fa25cb09eca3158a7fd5cd1"
     },
     "R/other2_functions.R": {
-      "checksum": "34e20dcc337d674b78d15849070d2e69"
+      "checksum": "a67fb254e520bd164afba255fb210332"
     }
   },
   "users": null
