@@ -1,5 +1,9 @@
 year_color <- "blue"
 
+round2 <- function(x, digits=2) {
+  sapply(round(x, digits), format)
+}
+
 ## for simplicity, assume 30 days in every month...
 monthdiff <- function(x1, x2) {
   (year(x2) - year(x1))*12 + month(x2) - month(x1) + 
@@ -15,7 +19,7 @@ get_range <- function(date1, date2, budget) {
   bb1 <- max(bx[bx <= date1])
   bb2 <- min(bx[bx >= date2])
   bx[bx >= bb1 & bx <= bb2]
-}  
+}
 
 process_effort <- function(date1, date2, effort, budget, daterange) {
   date1 <- as.Date(date1)
@@ -38,7 +42,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   budgets <- c(date1, budgets[budgets > date1 & budgets < date2], date2)
 
   ## need to have effort equal to the number of budget years  
-  stopifnot(length(effort) == length(budgets) - 1)
+  stopifnot(length(effort) == length(budgets) - 1) ## ERROR!
 
   ## table of budget periods and effort
   ef <- tibble(b1=budgets[-length(budgets)], b2=budgets[-1], effort=effort)
@@ -70,17 +74,13 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   ## get start/end of full budget years
   ## needed to give the plot enough breathing room on the sides
   ## this is hacky...
-  budget_range <- local({
-    bx <- as.Date(sprintf("%d-%02d-%02d", (year(date1)-1):(year(date2)+1), month(budget), day(budget)))
-    bb1 <- max(bx[bx <= date1])
-    bb2 <- min(bx[bx >= date2])
-    bx[bx >= bb1 & bx <= bb2]
-  })  
+  budget_range <- get_range(date1, date2, budget)
   
   ef_txt <- ef |> mutate(months=monthdiff(b1, b2), efper=effort/months,
                          by=seq_len(n())) |>
-    mutate(txt=sprintf("Budget Year %d:\n%d months effort\nover %d months\n(%s per month)", 
-                       by, effort, months, sapply(round(efper, 2), format))) |>
+    mutate(txt=sprintf("Budget Year %d:\n%s months effort\nover %s months\n(%s per month)", 
+                       by, round2(effort), round2(months), 
+                       round2(efper))) |>
     mutate(x=budget_range[-length(budget_range)] + months(6))
   
   cal2_txt <- cal2 |> mutate(txt=sapply(round(effort, 2), format))
@@ -120,8 +120,10 @@ required_vars <- c("shorttitle", "projecttitle", "awardnumber", "supportsource",
 prepare_projects <- function(dat) {
   dat <- dat |> mutate(awardamount=as.integer(awardamount)) |>
     rename(budget="budget year start date") |>
-    mutate(budget=if_else(is.na(budget), startdate, budget))
+    mutate(budget=if_else(is.na(budget), startdate, budget)) |>
+    mutate(shorttitle=shorttitle |> replace_na("_blank_") |> as_factor() )
   
+  # any(duplicated(dat$shorttitle)) ## ERROR!
   rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
   rr1 <- range(do.call(c, rr))
   rr2 <- range(as.Date(sprintf("%d-01-01",range(c(year(dat$startdate), year(dat$enddate-1)+1)))))
