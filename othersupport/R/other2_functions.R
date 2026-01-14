@@ -21,6 +21,16 @@ get_range <- function(date1, date2, budget) {
   bx[bx >= bb1 & bx <= bb2]
 }
 
+getsize <- function(ggobj) {
+  g <- ggplotGrob(ggobj)
+  known_ht <- sum(grid::convertHeight(g$heights, "in", valueOnly = TRUE))
+  known_wd <- sum(grid::convertWidth(g$widths, "in", valueOnly = TRUE))
+  c(width=known_wd, height=known_ht)
+}
+
+fitto <- function(h, w) ggh4x::force_panelsizes(rows=unit(h, "in"), cols = unit(w, "in"))
+
+
 process_effort <- function(date1, date2, effort, budget, daterange) {
   date1 <- as.Date(date1)
   date2 <- as.Date(date2)
@@ -96,6 +106,8 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
   
+  if(missing(daterange)) {daterange <- budget_range}
+  yr <- monthdiff(min(daterange), max(daterange))/12
   effort_plot <- ggplot(ef_txt) + aes(xmin=b1, xmax=b2, ymin=0, ymax=efper) + 
     geom_rect(fill="gray90", color="gray50") +
     theme_minimal() +
@@ -110,13 +122,12 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
                color="black", alpha=0.8, linetype="dashed", linewidth=1) +
     geom_text(aes(x=x, y=Inf, label=txt), size=6/.pt, vjust=1, hjust=0.5) +
     coord_cartesian(clip="off") +
-    expand_limits(x=budget_range, y=1) +
+    expand_limits(x=daterange, y=1) +
     geom_text(aes(x=mid, y=0, label=txt), data=cal2_txt, vjust=-0.5, inherit.aes=FALSE, size=8/.pt, color=year_color) +
     geom_text(aes(x=x, y=max(c(ef_txt$efper, 1))/2, label=txt), data=cal_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
-    labs(x=NULL, y="Percent Effort")
-  if(!missing(daterange)) {
-    effort_plot <- effort_plot + expand_limits(x=daterange)
-  }
+    labs(x=NULL, y="Percent Effort") +
+    fitto(2, yr)
+
   list(calendar=cal, budget=ef, plot=effort_plot, error=error)
 }
 
@@ -129,7 +140,9 @@ prepare_projects <- function(dat) {
   dat <- dat |> mutate(awardamount=as.integer(awardamount)) |>
     rename(budget="budget year start date") |>
     mutate(budget=if_else(is.na(budget), startdate, budget)) |>
-    mutate(shorttitle=shorttitle |> replace_na("_blank_") |> as_factor() )
+    mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
+    mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>
+    mutate(shorttitle=as_factor(shorttitle))
   
   # any(duplicated(dat$shorttitle)) ## ERROR!
   rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
@@ -190,7 +203,6 @@ dat_to_xml <- function(d) {
 }
 
 all_effort_plot <- function(p) {
-  p <- p |> mutate(shorttitle=as_factor(shorttitle))
   cal <- p |> select(shorttitle, commitment) |> unnest(commitment) |>
     summarize(effort=sum(effort), .by=year) |>
     mutate(x=as.Date(sprintf("%d-07-01", year))) |>
@@ -215,6 +227,9 @@ all_effort_plot <- function(p) {
   ef_all_plot <- ef_all |> mutate(d2=d2-minutes(1)) |>
     select(row, shorttitle, ddd_1=d1, ddd_2=d2, ef, efper) |>
     pivot_longer(starts_with("ddd_"), values_to="date")
+  
+  daterange <- range(ef_all_plot$date)
+  yr <- monthdiff(min(daterange), max(daterange))/12
   pp <- ggplot(ef_all_plot) + geom_area(aes(x=date, y=efper, fill=shorttitle)) +
     theme_minimal() +
     coord_cartesian(clip="off") +
@@ -228,7 +243,8 @@ all_effort_plot <- function(p) {
                color=year_color, alpha=0.8, linetype="dashed") +
     geom_text(aes(x=x, y=Inf, label=txt), data=cal, vjust=1,
               inherit.aes=FALSE, size=10/.pt, color=year_color, fontface="bold") +
-    theme(axis.text.x = element_text(color=year_color))
+    theme(axis.text.x = element_text(color=year_color)) +
+    fitto(2, yr)
   
   pp
 }

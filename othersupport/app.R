@@ -58,18 +58,18 @@ server <- function(input, output, session) {
     datx |> select(shorttitle, commitment) |> unnest(commitment)
   })
   
-  r <- 1/4
-  w <- 8
-  res <- 300
+  res <- 200
   
   output$plots <- renderUI({
     p <- data()
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
-      message(sprintf("project %d/%d...", i, n))
+      message(sprintf("rendering project %d/%d...", i, n))
+      wh <- getsize(p$.plot[[i]])
       budgeti <- p$.budget[[i]] |> 
         mutate("Budget Year" = 1:n(), .before=1) |>
         mutate(months=monthdiff(b1, b2), .after="b2") |>
+        mutate(b2=b2-1) |>
         rename(start=b1, end=b2, "person-months"=effort) |>
         mutate(across(c(start, end), format))
       tagList(
@@ -77,21 +77,27 @@ server <- function(input, output, session) {
         tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
         if(!is.na(p$.error[i])) tags$h5(paste("WARNING:", p$.error[i])) else NULL,
         renderTable(budgeti),
-        renderPlot(p$.plot[[i]], width=w*res, height=w*r*res, res=res)
+        renderPlot(p$.plot[[i]], width=wh[1]*res, height=wh[2]*res, res=res)
       )
     }))
   })
   output$error_count <- renderUI({
     p <- data()
     ne <- sum(!is.na(p$.error))
-    tag("p", sprintf("%d errors found.", ne))
+    tagList(
+      h2("Error checking:"),
+      p(em(sprintf("%d errors found.", ne))),
+      p("This app has very limited error checking, though! Be thoughtful when using it.")
+    )
   })
   output$plot_all <- renderUI({
     p <- data()
+    plot_all <- all_effort_plot(p) +
+      theme(legend.position = "bottom")
+    wh <- getsize(plot_all)
     tagList(
       h2("All Combined"),
-      renderPlot(all_effort_plot(p), 
-                 width=w*res, height=w*r*res, res=res)
+      renderPlot(plot_all, width=wh[1]*res, height=wh[2]*res, res=res)
     )
   })
   
