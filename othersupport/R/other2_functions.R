@@ -242,7 +242,7 @@ all_effort_plot <- function(p) {
     geom_vline(xintercept=as.Date(sprintf("%d-01-01", c(years, max(years)+1))),
                color=year_color, alpha=0.8, linetype="dashed") +
     geom_text(aes(x=x, y=Inf, label=txt), data=cal, vjust=1,
-              inherit.aes=FALSE, size=10/.pt, color=year_color, fontface="bold") +
+              inherit.aes=FALSE, size=9/.pt, color=year_color, fontface="bold") +
     theme(axis.text.x = element_text(color=year_color)) +
     fitto(2, yr)
   
