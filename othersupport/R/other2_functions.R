@@ -131,7 +131,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   list(calendar=cal, budget=ef, plot=effort_plot, error=error)
 }
 
-required_vars <- c("shorttitle", "projecttitle", "awardnumber", "supportsource", 
+required_vars <- c("projecttitle", "awardnumber", "supportsource", 
                    "location", "contributiontype", "awardamount", "inkinddescription", 
                    "overallobjectives", "potentialoverlap", "startdate", "enddate", 
                    "supporttype")
@@ -183,7 +183,7 @@ row_to_xml <- function(dat1) {
   ## and missing values should be empty lists
   d1.list <- lapply(d1, \(x) if(is.na(x)) list() else list(x))
   if("commitment" %in% names(dat1)) {
-    d2 <- dat1$commitment[[1]] |> mutate(effort=round(effort, 3))
+    d2 <- dat1$commitment[[1]] |> mutate(effort=round(effort, 2))
     d2.list <- map2(d2$year, d2$effort, \(y, e) {
       list(personmonth = structure(list(e), year = y))
     })
