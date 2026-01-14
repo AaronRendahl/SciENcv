@@ -228,8 +228,7 @@ all_effort_plot <- function(p) {
     select(row, shorttitle, ddd_1=d1, ddd_2=d2, ef, efper) |>
     pivot_longer(starts_with("ddd_"), values_to="date")
   
-  daterange <- range(ef_all_plot$date)
-  yr <- monthdiff(min(daterange), max(daterange))/12
+  yr <- length(years)
   pp <- ggplot(ef_all_plot) + geom_area(aes(x=date, y=efper, fill=shorttitle)) +
     theme_minimal() +
     coord_cartesian(clip="off") +
