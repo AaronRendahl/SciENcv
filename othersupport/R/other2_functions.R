@@ -183,7 +183,7 @@ row_to_xml <- function(dat1) {
   ## and missing values should be empty lists
   d1.list <- lapply(d1, \(x) if(is.na(x)) list() else list(x))
   if("commitment" %in% names(dat1)) {
-    d2 <- dat1$commitment[[1]]
+    d2 <- dat1$commitment[[1]] |> round(effort, 3)
     d2.list <- map2(d2$year, d2$effort, \(y, e) {
       list(personmonth = structure(list(e), year = y))
     })
