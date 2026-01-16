@@ -17,18 +17,25 @@ conflicts_prefer(dplyr::filter, dplyr::lag)
 
 sampleurl <- "https://docs.google.com/spreadsheets/d/1h3TJNpgWc5O1S7QEUeEePHlypPz27d9sCYfHFNuKNJ4/edit?usp=sharing"
 samplelink <- tags$a(href=sampleurl, "View Sample Excel format", target="_blank")
+current_year <- year(Sys.time())
 
 ui <- fluidPage(
   titlePanel("SciENcv Other Support XML Conversion"),
+  samplelink,
   tags$style(HTML("img {display: block; max-width: 100%; height: auto;}")),
   fluidRow(
-    column(6,
-           samplelink,
-           fileInput("upload", "Upload an Excel file with the right format:"),
+    column(
+      6,
+      fileInput("upload", "Upload an Excel file with the right format:"),
+      selectInput("current_year", "Select Current Year", 
+                  choices = current_year + c(-10:5),
+                  selected = current_year)
     ),
-    column(6,
-           tag("strong", "Then download the XML file:"),
-           downloadButton("download")
+    column(
+      6,
+      tag("strong", "Then download the XML file:"),
+      downloadButton("download"),
+      tags$p("The XML file will only include effort from the current year forward.")
     )),
   fluidRow(
     uiOutput("error_count"),
@@ -49,7 +56,7 @@ server <- function(input, output, session) {
       paste0(str_remove(input$upload$name, "\\.xlsx$"), ".xml")
     },
     content = function(file) {
-      data() |> dat_to_xml() |> write_xml(file)
+      data() |> dat_to_xml(current_year=as.integer(input$current_year)) |> write_xml(file)
     }
   )
   
