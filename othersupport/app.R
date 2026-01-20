@@ -45,10 +45,15 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  data <- reactive({
+  
+  raw_data <- reactive({
     req(input$upload)
     file <- input$upload$datapath
-    readxl::read_excel(file) |> prepare_projects()
+    read_effort(file) 
+  })
+  
+  data <- reactive({
+    raw_data()$data |> prepare_projects()
   })
   
   output$download <- downloadHandler(

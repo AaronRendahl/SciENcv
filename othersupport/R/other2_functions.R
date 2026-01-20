@@ -37,7 +37,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   budget <- as.Date(budget)
   error <- NA
   ## I assume date2 is the first day after it ends, however...
-  ## if the next day after the end is the same day of the month as the budget yearstarts,
+  ## if the next day after the end is the same day of the month as the full year starts,
   ## assume last date is actually the day before what's given
   ## and add a day.
   if(day(budget) == day(date2+1)) {
@@ -135,10 +135,18 @@ required_vars <- c("projecttitle", "awardnumber", "supportsource",
                    "location", "contributiontype", "awardamount", "inkinddescription", 
                    "overallobjectives", "potentialoverlap", "startdate", "enddate", 
                    "supporttype")
+read_effort <- function(file) {
+  d <- readxl::read_excel(file)
+  #all(names(d)[1:13] == c("shorttitle", required_vars))
+  #str_subset(names(d), "^year [0-9]+$")
+  #"full year start date"
+  #"method"
+  list(error=NA, data=d)
+}
 
 prepare_projects <- function(dat) {
   dat <- dat |> mutate(awardamount=as.integer(awardamount)) |>
-    rename(budget="budget year start date") |>
+    rename(budget="full year start date") |>
     mutate(budget=if_else(is.na(budget), startdate, budget)) |>
     mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
     mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>
