@@ -16,31 +16,35 @@ library(shiny)
 conflicts_prefer(dplyr::filter, dplyr::lag)
 
 sampleurl <- "https://docs.google.com/spreadsheets/d/1h3TJNpgWc5O1S7QEUeEePHlypPz27d9sCYfHFNuKNJ4/edit?usp=sharing"
-samplelink <- tags$a(href=sampleurl, "View Sample Excel format", target="_blank")
+samplelink <- tags$a(href=sampleurl, "Link to Sample Excel file", target="_blank")
 current_year <- year(Sys.time())
 
 ui <- fluidPage(
   titlePanel("SciENcv Other Support XML Conversion"),
-  samplelink,
   tags$style(HTML("img {display: block; max-width: 100%; height: auto;}")),
   fluidRow(
     column(
       6,
-      fileInput("upload", "Upload an Excel file with the right format:"),
-      selectInput("current_year", "Select Current Year", 
-                  choices = current_year + c(-10:5),
-                  selected = current_year)
+      p(strong("View Sample:")),
+      samplelink,
+      tag("p", ""),
+      fileInput("upload", "Upload an Excel file:"),
     ),
     column(
       6,
-      tag("strong", "Then download the XML file:"),
-      downloadButton("download"),
-      tags$p("The XML file will only include effort from the current year forward.")
+      selectInput("current_year", "Select Current Year:", 
+                  choices = current_year + c(-10:5),
+                  selected = current_year),
+      tags$p("(The XML file will only include effort from the current year forward.)"),
+      tag("strong", "Download the XML file:"),
+      downloadButton("download")
+
     )),
   fluidRow(
     uiOutput("error_read"),
     uiOutput("warning_read"),
     uiOutput("error_count"),
+    uiOutput("preview"),
     uiOutput("plot_all"),
     uiOutput("plots")
   )
@@ -95,9 +99,11 @@ server <- function(input, output, session) {
   output$preview <- renderTable({
     if(ok()) {
       datx <- data() 
-      datx |> select(shorttitle, commitment) |> unnest(commitment)
+      datx |> select(shorttitle, commitment) |> unnest(commitment) |>
+        arrange(year) |>
+        pivot_wider(names_from=year, values_from=effort)
     }
-  })
+  }, na="")
   
   res <- 200
 

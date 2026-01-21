@@ -36,7 +36,8 @@ read_effort <- function(file) {
   # unneeded columns
   hmm <- setdiff(names(d), c(nexp, years, start_var, "method"))
   if(length(hmm) > 0) {
-    w <- c(w, sprintf("Unneeded variables: %s", paste(hmm, sep=", ")))    
+    hmm <- paste0("'", hmm, "'")
+    w <- c(w, sprintf("Ignored variables: %s", paste(hmm, sep=", ")))    
   }
   
   
