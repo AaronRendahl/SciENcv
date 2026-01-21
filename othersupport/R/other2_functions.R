@@ -139,14 +139,21 @@ read_effort <- function(file) {
   d <- readxl::read_excel(file)
   nexp <- c("shorttitle", required_vars)
   oops <- names(d)[1:13] != nexp
+  e <- character()
   if(any(oops)) {
-    e <- sprintf("Name mismatch: column(s) %s should be %s.",
-                 paste(which(oops), collapse="/"), paste(nexp[oops], collapse="/"))
-    d <- FALSE
+    e <- c(e,
+           sprintf("Name mismatch: column %s should be named '%s'.",
+                 which(oops), nexp[oops]))
   }
-  #str_subset(names(d), "^year [0-9]+$")
+  years <- str_subset(names(d), "^year [0-9]+$")
+  if(length(years)==0) {
+    e <- c(e, "No years of effort found.")
+  }
   #"full year start date"
   #"method"
+  if(length(e)>0) {
+    d <- FALSE
+  }
   list(error=e, data=d)
 }
 

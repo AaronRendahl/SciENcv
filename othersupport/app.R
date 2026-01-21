@@ -63,8 +63,9 @@ server <- function(input, output, session) {
   
   output$error_read <- renderUI({
     e <- raw_data()$error
-    if(!is.na(e)) {
-      tagList(h2("Data error:"), p(e))
+    if(length(e)>0) {
+      errorlist <- do.call(tags$ul, lapply(e, tags$li))
+      tagList(h2("Data error:"), errorlist)
     }
   })
   
