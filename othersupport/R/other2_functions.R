@@ -1,36 +1,3 @@
-year_color <- "blue"
-
-round2 <- function(x, digits=2) {
-  sapply(round(x, digits), format)
-}
-
-## for simplicity, assume 30 days in every month...
-monthdiff <- function(x1, x2) {
-  (year(x2) - year(x1))*12 + month(x2) - month(x1) + 
-    (pmin(day(x2),30) - pmin(day(x1),30))/30
-}
-
-get_range <- function(date1, date2, budget) {
-  date1 <- as.Date(date1)
-  date2 <- as.Date(date2)
-  budget <- as.Date(budget)
-  if(day(date1) == day(date2+1)) { date2 <- date2 + 1 }
-  bx <- as.Date(sprintf("%d-%02d-%02d", (year(date1)-1):(year(date2)+1), month(budget), day(budget)))
-  bb1 <- max(bx[bx <= date1])
-  bb2 <- min(bx[bx >= date2])
-  bx[bx >= bb1 & bx <= bb2]
-}
-
-getsize <- function(ggobj) {
-  g <- ggplotGrob(ggobj)
-  known_ht <- sum(grid::convertHeight(g$heights, "in", valueOnly = TRUE))
-  known_wd <- sum(grid::convertWidth(g$widths, "in", valueOnly = TRUE))
-  c(width=known_wd, height=known_ht)
-}
-
-fitto <- function(h, w) ggh4x::force_panelsizes(rows=unit(h, "in"), cols = unit(w, "in"))
-
-
 process_effort <- function(date1, date2, effort, budget) {
   w <- c()
   date1 <- as.Date(date1)
@@ -67,11 +34,6 @@ process_effort <- function(date1, date2, effort, budget) {
 
   ## table of budget periods and effort
   ef <- tibble(b1=budgets[-length(budgets)], b2=budgets[-1]-1, effort=effort)
-
-  monthmid <- function(x1, x2) {
-    dif <- monthdiff(x1, x2)/2
-    x1 + months(dif %/% 1) + days(round((dif %% 1)*30))
-  }
         
   ## compute how much of each budget period is in each calendar year
   ## there's got to be an easier way...
@@ -122,6 +84,7 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
   cal_txt <- cal |> mutate(x=as.Date(sprintf("%d-07-01", year))) |>
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
+  years <- cal$year
   
   yr <- monthdiff(min(daterange), max(daterange))/12
   effort_plot <- ggplot(ef_txt) + aes(xmin=b1, xmax=b2, ymin=0, ymax=efper) + 
@@ -143,65 +106,10 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
     geom_text(aes(x=x, y=max(c(ef_txt$efper, 1))/2, label=txt), data=cal_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
     labs(x=NULL, y="Percent Effort") +
     fitto(2, yr)
-
-effort_plot
+  effort_plot
 }
 
-required_vars <- c("projecttitle", "awardnumber", "supportsource", 
-                   "location", "contributiontype", "awardamount", "inkinddescription", 
-                   "overallobjectives", "potentialoverlap", "startdate", "enddate", 
-                   "supporttype")
-start_var <- "full year start date"
 
-read_effort <- function(file) {
-  d <- readxl::read_excel(file)
-  nexp <- c("shorttitle", required_vars)
-  oops <- names(d)[1:13] != nexp
-  e <- character()
-  w <- character()
-  if(any(oops)) {
-    e <- c(e,
-           sprintf("Name mismatch: column %s should be named '%s'.",
-                 which(oops), nexp[oops]))
-  }
-  years <- str_subset(names(d), "^year [0-9]+$")
-  if(length(years)==0) {
-    e <- c(e, "No years of effort found.")
-  }
-  # other things to check??
-  
-  # "full year start date"
-  if(!start_var %in% names(d)) {
-    d[[start_var]] <- NA
-  }
-  
-  # "method"
-  if(!"method" %in% names(d)) {
-    d$method <- "PRORATE"
-  }
-  # any(duplicated(dat$shorttitle)) 
-  # awardamount is an integer
-  
-  # unneeded columns
-  hmm <- setdiff(names(d), c(nexp, years, start_var, "method"))
-  if(length(hmm) > 0) {
-    w <- c(w, sprintf("Unneeded variables: %s", paste(hmm, sep=", ")))    
-  }
-
-  
-  if(length(e)>0) {
-    d <- FALSE
-  } else {
-    d <- d |> mutate(awardamount=as.integer(awardamount)) |>
-      rename(c(budget=any_of(start_var))) |>
-      mutate(budget=if_else(is.na(budget), startdate, budget)) |>
-      mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
-      mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>
-      mutate(shorttitle=as_factor(shorttitle))
-  }
-  
-  list(error=e, warning=w, data=d)
-}
 
 prepare_projects <- function(dat) { 
   row2list <- function(dat1) {
@@ -230,32 +138,7 @@ prepare_projects <- function(dat) {
   bind_rows(lapply(seq_len(nrow(dat)), \(idx) row2list(dat[idx,])))
 }
 
-row_to_xml <- function(dat1, current_year) {
-  d1 <- dat1 |> select(all_of(required_vars))
-  ## make a list of the elements,
-  ## where each element has to be a list,
-  ## and missing values should be empty lists
-  d1.list <- lapply(d1, \(x) if(is.na(x)) list() else list(x))
-  if("commitment" %in% names(dat1)) {
-    d2 <- dat1$commitment[[1]] |> mutate(effort=round(effort, 2)) |>
-      filter(year >= current_year, effort > 0)
-    d2.list <- map2(d2$year, d2$effort, \(y, e) {
-      list(personmonth = structure(list(e), year = y))
-    })
-    d1.list$commitment <- d2.list
-  }
-  list(support=d1.list)
-}
 
-dat_to_xml <- function(d, current_year=0) {
-  row_xml <- lapply(seq_len(nrow(d)), \(idx) row_to_xml(d[idx,], current_year))
-  list(profile=list(
-    identification=list(),
-    employment=list(),
-    funding=row_xml
-  )) |> 
-    as_xml_document() 
-}
 
 all_effort_plot <- function(p) {
   cal <- p |> select(shorttitle, commitment) |> unnest(commitment) |>

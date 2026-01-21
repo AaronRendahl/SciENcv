@@ -104,9 +104,7 @@ server <- function(input, output, session) {
   })
   
   res <- 200
-  
 
-  
   output$plots <- renderUI({
     if(ok()) {
     p <- data()
