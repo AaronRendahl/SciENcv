@@ -19,6 +19,8 @@ file_xlsx <- "Sample Other Support v3.xlsx"
 for(f in list.files(path="othersupport/R", full.names = TRUE)) source(f)
 d <- read_effort(file_xlsx)
 p <- d$data |> prepare_projects()
+d$warning
+p$.error
 
 daterange <- get_data_range(d$data)
 

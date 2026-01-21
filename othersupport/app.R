@@ -40,14 +40,13 @@ ui <- fluidPage(
       downloadButton("download")
 
     )),
-  fluidRow(
+  fluidRow(column(12,
     uiOutput("error_read"),
     uiOutput("warning_read"),
-    uiOutput("error_count"),
     uiOutput("preview"),
     uiOutput("plot_all"),
     uiOutput("plots")
-  )
+  ))
 )
 
 server <- function(input, output, session) {
@@ -81,10 +80,23 @@ server <- function(input, output, session) {
   })
   output$warning_read <- renderUI({
     w <- raw_data()$warning
-    if(length(w)>0) {
-      warninglist <- do.call(tags$ul, lapply(w, tags$li))
-      tagList(h2("Data notes:"), warninglist)
+    if(ok()) {
+      p <- data()
+      ne <- length(unlist(p$.error))
+      if(ne > 0) w <- c(w, sprintf("%d per-project warnings; see below.", ne))
     }
+    message(paste(w, collapse="\n"))
+    nw <- length(w)
+    message(nw)
+    tagList(
+      if(nw > 0) {
+        tagList(
+          h2("Potential data issues:"), 
+          do.call(tags$ul, lapply(w, tags$li)),
+          p(em("This app has very limited error checking, though! Be thoughtful when using it."))
+        )
+      }
+    )
   })
   
   output$download <- downloadHandler(
@@ -96,14 +108,6 @@ server <- function(input, output, session) {
     }
   )
   
-  output$preview <- renderTable({
-    if(ok()) {
-      datx <- data() 
-      datx |> select(shorttitle, commitment) |> unnest(commitment) |>
-        arrange(year) |>
-        pivot_wider(names_from=year, values_from=effort)
-    }
-  }, na="")
   
   res <- 200
 
@@ -133,18 +137,7 @@ server <- function(input, output, session) {
     }))
     }
   })
-  
-  output$error_count <- renderUI({
-    if(ok()) {
-    p <- data()
-    ne <- sum(!is.na(p$.error))
-    tagList(
-      h2("Data checking:"),
-      p(em(sprintf("%d warnings; see below.", ne))),
-      p("This app has very limited error checking, though! Be thoughtful when using it.")
-    )
-    }
-  })
+
   
   output$plot_all <- renderUI({
     if(ok()) {
@@ -153,7 +146,12 @@ server <- function(input, output, session) {
       theme(legend.position = "bottom")
     wh <- getsize(plot_all)
     tagList(
-      h2("All Combined"),
+      h2("All Projects"),
+      renderTable({
+        p |> select(shorttitle, commitment) |> unnest(commitment) |>
+          arrange(year) |>
+          pivot_wider(names_from=year, values_from=effort)
+      }, na=""),
       renderPlot(plot_all, width=wh[1]*res, height=wh[2]*res, res=res)
     )
     }
