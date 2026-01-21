@@ -104,8 +104,7 @@ server <- function(input, output, session) {
       wh <- getsize(p$.plot[[i]])
       budgeti <- p$.budget[[i]] |> 
         mutate("Budget Year" = 1:n(), .before=1) |>
-        mutate(months=monthdiff(b1, b2), .after="b2") |>
-        mutate(b2=b2-1) |>
+        mutate(months=monthdiff(b1, b2+1), .after="b2") |>
         rename(start=b1, end=b2, "person-months"=effort) |>
         mutate(across(c(start, end), format))
       tagList(
@@ -118,8 +117,6 @@ server <- function(input, output, session) {
     }))
     }
   })
-  
-
   
   output$error_count <- renderUI({
     if(ok()) {
