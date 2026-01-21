@@ -62,6 +62,16 @@ server <- function(input, output, session) {
     if(ok()) raw_data()$data |> prepare_projects()
   })
   
+  daterange <- reactive({
+    if(ok()) {
+      dat <- raw_data()$data
+      rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
+      rr1 <- range(do.call(c, rr))
+      rr2 <- range(as.Date(sprintf("%d-01-01",range(c(year(dat$startdate), year(dat$enddate-1)+1)))))
+      rr <- range(c(rr1, rr2))
+      rr
+    }
+  })
   output$error_read <- renderUI({
     e <- raw_data()$error
     if(length(e)>0) {
@@ -95,13 +105,16 @@ server <- function(input, output, session) {
   
   res <- 200
   
+
+  
   output$plots <- renderUI({
     if(ok()) {
     p <- data()
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
       message(sprintf("rendering project %d/%d...", i, n))
-      wh <- getsize(p$.plot[[i]])
+      ploti <- plot_effort(p$startdate[i], p$enddate[i], p$budget[i], p$effort[[i]], daterange())
+      wh <- getsize(ploti)
       budgeti <- p$.budget[[i]] |> 
         mutate("Budget Year" = 1:n(), .before=1) |>
         mutate(months=monthdiff(b1, b2+1), .after="b2") |>
@@ -112,7 +125,7 @@ server <- function(input, output, session) {
         tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
         if(!is.na(p$.error[i])) tags$h5(paste("WARNING:", p$.error[i])) else NULL,
         renderTable(budgeti),
-        renderPlot(p$.plot[[i]], width=wh[1]*res, height=wh[2]*res, res=res)
+        renderPlot(ploti, width=wh[1]*res, height=wh[2]*res, res=res)
       )
     }))
     }

@@ -31,7 +31,7 @@ getsize <- function(ggobj) {
 fitto <- function(h, w) ggh4x::force_panelsizes(rows=unit(h, "in"), cols = unit(w, "in"))
 
 
-process_effort <- function(date1, date2, effort, budget, daterange) {
+process_effort <- function(date1, date2, effort, budget) {
   w <- c()
   date1 <- as.Date(date1)
   date2 <- as.Date(date2)
@@ -93,9 +93,11 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   cal <- cal2 |>
     summarize(effort=sum(effort), .by=year)
   
-  effort_plot <- plot_effort(date1, date2, budget, cal2, daterange)
-  list(calendar=cal, budget=ef, effort=cal2, plot=effort_plot, error=error)
+  list(calendar=cal, budget=ef, effort=cal2, error=error)
 }
+
+
+#effort_plot <- plot_effort(date1, date2, budget, cal2, daterange)
 
 plot_effort <- function(date1, date2, budget, cal2, daterange) {
   ef <- cal2 |> summarize(b1=min(start), b2=max(end), effort=sum(effort), .by=budget)
@@ -104,6 +106,7 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
   ## needed to give the plot enough breathing room on the sides
   ## this is hacky...
   budget_range <- get_range(date1, date2, budget)
+  if(missing(daterange)) {daterange <- budget_range}
   
   ef_txt <- ef |> mutate(months=monthdiff(b1, b2+1), efper=effort/months,
                          by=seq_len(n())) |>
@@ -120,7 +123,6 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
   
-  if(missing(daterange)) {daterange <- budget_range}
   yr <- monthdiff(min(daterange), max(daterange))/12
   effort_plot <- ggplot(ef_txt) + aes(xmin=b1, xmax=b2, ymin=0, ymax=efper) + 
     geom_rect(fill="gray90", color="gray50") +
@@ -201,12 +203,7 @@ read_effort <- function(file) {
   list(error=e, warning=w, data=d)
 }
 
-prepare_projects <- function(dat) {
-  rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
-  rr1 <- range(do.call(c, rr))
-  rr2 <- range(as.Date(sprintf("%d-01-01",range(c(year(dat$startdate), year(dat$enddate-1)+1)))))
-  rr <- range(c(rr1, rr2))
-  
+prepare_projects <- function(dat) { 
   row2list <- function(dat1) {
     d1 <- dat1 |> select(!starts_with("year "))
     d2 <- dat1 |> select(starts_with("year "))
@@ -222,10 +219,10 @@ prepare_projects <- function(dat) {
     ## if there is any effort, process it and add it to the data set
     if(length(effort) > 0) {
       message(dat1$shorttitle)
-      ef <- process_effort(dat1$startdate, dat1$enddate, effort, budget_start, daterange=rr)
+      ef <- process_effort(dat1$startdate, dat1$enddate, effort, budget_start)
       d1$commitment <- list(ef$calendar)
       d1$.budget <- list(ef$budget)
-      d1$.plot <- list(ef$plot)
+      d1$effort <- list(ef$effort)
       d1$.error <- ef$error
     }
     d1
