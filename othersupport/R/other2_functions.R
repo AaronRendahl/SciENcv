@@ -94,7 +94,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
     summarize(effort=sum(effort), .by=year)
   
   effort_plot <- plot_effort(date1, date2, budget, cal2, daterange)
-  list(calendar=cal, budget=ef, plot=effort_plot, error=error)
+  list(calendar=cal, budget=ef, effort=cal2, plot=effort_plot, error=error)
 }
 
 plot_effort <- function(date1, date2, budget, cal2, daterange) {
@@ -105,7 +105,7 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
   ## this is hacky...
   budget_range <- get_range(date1, date2, budget)
   
-  ef_txt <- ef |> mutate(months=monthdiff(b1, b2), efper=effort/months,
+  ef_txt <- ef |> mutate(months=monthdiff(b1, b2+1), efper=effort/months,
                          by=seq_len(n())) |>
     mutate(txt=sprintf("Budget Year %d:\n%s months effort\nover %s months\n(%s per month)", 
                        by, round2(effort), round2(months), 
