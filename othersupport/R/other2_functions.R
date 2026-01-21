@@ -79,21 +79,23 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
            r2=monthdiff(cal, b2),
            effort_1=effort*r1/(r1+r2), 
            effort_2=effort*r2/(r1+r2),
-           mid_1=monthmid(b1, cal),
-           mid_2=monthmid(cal, b2)) |>
+           start_1=b1, end_1=cal-1,
+           start_2=cal, end_2=b2-1) |>
     mutate(budget=1:n(), year_1=year(b1), year_2=year(b2))
   cal2 <- cal1 |>
     select(budget, contains("_")) |>
     pivot_longer(contains("_"), names_to=c(".value", "X"), names_sep="_") |>
-    filter(effort > 0) |> select(-X)
+    filter(effort > 0) |> select(-X) |> relocate(effort, .after="year")
+
   cal <- cal2 |>
     summarize(effort=sum(effort), .by=year)
   
-  effort_plot <- plot_effort(date1, date2, budget, ef, cal2, cal, daterange)
+  effort_plot <- plot_effort(date1, date2, budget, cal2, daterange)
   list(calendar=cal, budget=ef, plot=effort_plot, error=error)
 }
 
-plot_effort <- function(date1, date2, budget, ef, cal2, cal, daterange) {
+plot_effort <- function(date1, date2, budget, cal2, daterange) {
+  ef <- cal2 |> summarize(b1=min(start), b2=max(end), effort=sum(effort), .by=budget)
   
   ## get start/end of full budget years
   ## needed to give the plot enough breathing room on the sides
@@ -107,7 +109,10 @@ plot_effort <- function(date1, date2, budget, ef, cal2, cal, daterange) {
                        round2(efper))) |>
     mutate(x=budget_range[-length(budget_range)] + months(6))
   
-  cal2_txt <- cal2 |> mutate(txt=sapply(round(effort, 2), format))
+  cal2_txt <- cal2 |> mutate(txt=sapply(round(effort, 2), format)) |>
+    mutate(mid=monthmid(start, end))
+  cal <- cal2 |>
+    summarize(effort=sum(effort), .by=year)
   cal_txt <- cal |> mutate(x=as.Date(sprintf("%d-07-01", year))) |>
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
