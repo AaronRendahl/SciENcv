@@ -65,11 +65,7 @@ server <- function(input, output, session) {
   daterange <- reactive({
     if(ok()) {
       dat <- raw_data()$data
-      rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
-      rr1 <- range(do.call(c, rr))
-      rr2 <- range(as.Date(sprintf("%d-01-01",range(c(year(dat$startdate), year(dat$enddate-1)+1)))))
-      rr <- range(c(rr1, rr2))
-      rr
+      get_data_range(dat)
     }
   })
   output$error_read <- renderUI({
