@@ -137,11 +137,17 @@ required_vars <- c("projecttitle", "awardnumber", "supportsource",
                    "supporttype")
 read_effort <- function(file) {
   d <- readxl::read_excel(file)
-  #all(names(d)[1:13] == c("shorttitle", required_vars))
+  nexp <- c("shorttitle", required_vars)
+  oops <- names(d)[1:13] != nexp
+  if(any(oops)) {
+    e <- sprintf("Name mismatch: column(s) %s should be %s.",
+                 paste(which(oops), collapse="/"), paste(nexp[oops], collapse="/"))
+    d <- FALSE
+  }
   #str_subset(names(d), "^year [0-9]+$")
   #"full year start date"
   #"method"
-  list(error=NA, data=d)
+  list(error=e, data=d)
 }
 
 prepare_projects <- function(dat) {

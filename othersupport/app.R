@@ -38,6 +38,7 @@ ui <- fluidPage(
       tags$p("The XML file will only include effort from the current year forward.")
     )),
   fluidRow(
+    uiOutput("error_read"),
     uiOutput("error_count"),
     uiOutput("plot_all"),
     uiOutput("plots")
@@ -52,8 +53,19 @@ server <- function(input, output, session) {
     read_effort(file) 
   })
   
+  ok <- reactive({
+    !isFALSE(raw_data()$data)
+  })
+  
   data <- reactive({
-    raw_data()$data |> prepare_projects()
+    if(ok()) raw_data()$data |> prepare_projects() else FALSE
+  })
+  
+  output$error_read <- renderUI({
+    e <- raw_data()$error
+    if(!is.na(e)) {
+      tagList(h2("Data error:"), p(e))
+    }
   })
   
   output$download <- downloadHandler(
@@ -66,13 +78,16 @@ server <- function(input, output, session) {
   )
   
   output$preview <- renderTable({
-    datx <- data() 
-    datx |> select(shorttitle, commitment) |> unnest(commitment)
+    if(ok()) {
+      datx <- data() 
+      datx |> select(shorttitle, commitment) |> unnest(commitment)
+    }
   })
   
   res <- 200
   
   output$plots <- renderUI({
+    if(ok()) {
     p <- data()
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
@@ -92,8 +107,13 @@ server <- function(input, output, session) {
         renderPlot(p$.plot[[i]], width=wh[1]*res, height=wh[2]*res, res=res)
       )
     }))
+    }
   })
+  
+
+  
   output$error_count <- renderUI({
+    if(ok()) {
     p <- data()
     ne <- sum(!is.na(p$.error))
     tagList(
@@ -101,8 +121,11 @@ server <- function(input, output, session) {
       p(em(sprintf("%d errors found.", ne))),
       p("This app has very limited error checking, though! Be thoughtful when using it.")
     )
+    }
   })
+  
   output$plot_all <- renderUI({
+    if(ok()) {
     p <- data()
     plot_all <- all_effort_plot(p) +
       theme(legend.position = "bottom")
@@ -111,6 +134,7 @@ server <- function(input, output, session) {
       h2("All Combined"),
       renderPlot(plot_all, width=wh[1]*res, height=wh[2]*res, res=res)
     )
+    }
   })
   
 }
