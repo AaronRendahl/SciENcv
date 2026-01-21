@@ -112,7 +112,7 @@ server <- function(input, output, session) {
       budgeti <- p$.budget[[i]] |> 
         mutate("Budget Year" = 1:n(), .before=1) |>
         mutate(months=monthdiff(b1, b2+1), .after="b2") |>
-        rename(start=b1, end=b2, "person-months"=effort) |>
+        rename(start=b1, end=b2, "person-months effort"=effort) |>
         mutate(across(c(start, end), format))
       tagList(
         h2(p$shorttitle[i]),
