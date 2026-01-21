@@ -3,7 +3,6 @@ process_effort <- function(date1, date2, effort, budget) {
   date1 <- as.Date(date1)
   date2 <- as.Date(date2)
   budget <- as.Date(budget)
-  error <- NA
   ## I assume date2 is the last day of the budget period, however...
   ## if end is actually on the same day of the month as the full year starts,
   ## assume last date is actually the day before what's given, and
@@ -30,6 +29,7 @@ process_effort <- function(date1, date2, effort, budget) {
                      else if (ne > nb) {"Discarding extra effort years." })
     effort <- effort[seq_len(nb)] |> replace_na(0)
     warning(error)
+    w <- c(w, error)
   } 
 
   ## table of budget periods and effort
@@ -55,7 +55,7 @@ process_effort <- function(date1, date2, effort, budget) {
   cal <- cal2 |>
     summarize(effort=sum(effort), .by=year)
   
-  list(calendar=cal, budget=ef, effort=cal2, error=error)
+  list(calendar=cal, budget=ef, effort=cal2, error=w)
 }
 
 
@@ -79,7 +79,7 @@ prepare_projects <- function(dat) {
       d1$commitment <- list(ef$calendar)
       d1$.budget <- list(ef$budget)
       d1$effort <- list(ef$effort)
-      d1$.error <- ef$error
+      d1$.error <- list(ef$error)
     }
     d1
   }

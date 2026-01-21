@@ -123,7 +123,10 @@ server <- function(input, output, session) {
       tagList(
         h2(p$shorttitle[i]),
         tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
-        if(!is.na(p$.error[i])) tags$h5(paste("WARNING:", p$.error[i])) else NULL,
+        if(length(p$.error[[i]])>0) {
+          errorlist <- do.call(tags$ul, lapply(p$.error[[i]], tags$li))
+          tagList(tags$h5("WARNING:"), errorlist)
+        },
         renderTable(budgeti),
         renderPlot(ploti, width=wh[1]*res, height=wh[2]*res, res=res)
       )
@@ -136,8 +139,8 @@ server <- function(input, output, session) {
     p <- data()
     ne <- sum(!is.na(p$.error))
     tagList(
-      h2("Error checking:"),
-      p(em(sprintf("%d errors found.", ne))),
+      h2("Data checking:"),
+      p(em(sprintf("%d warnings; see below.", ne))),
       p("This app has very limited error checking, though! Be thoughtful when using it.")
     )
     }
