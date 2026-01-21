@@ -14,9 +14,9 @@ googledrive::drive_download(
 )
 
 #file_xlsx <- "sample_v3.xlsx"
-file_xlsx <- "Copy of Sample Other Support v3.xlsx"
-d <- readxl::read_excel(file_xlsx)
-p <- d |> prepare_projects()
+file_xlsx <- "Sample Other Support v3.xlsx"
+d <- read_effort(file_xlsx)
+p <- d$data |> prepare_projects()
 
 p$.plot[[2]]
 all_effort_plot(p)
