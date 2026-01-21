@@ -39,6 +39,7 @@ ui <- fluidPage(
     )),
   fluidRow(
     uiOutput("error_read"),
+    uiOutput("warning_read"),
     uiOutput("error_count"),
     uiOutput("plot_all"),
     uiOutput("plots")
@@ -58,7 +59,7 @@ server <- function(input, output, session) {
   })
   
   data <- reactive({
-    if(ok()) raw_data()$data |> prepare_projects() else FALSE
+    if(ok()) raw_data()$data |> prepare_projects()
   })
   
   output$error_read <- renderUI({
@@ -66,6 +67,13 @@ server <- function(input, output, session) {
     if(length(e)>0) {
       errorlist <- do.call(tags$ul, lapply(e, tags$li))
       tagList(h2("Data error:"), errorlist)
+    }
+  })
+  output$warning_read <- renderUI({
+    w <- raw_data()$warning
+    if(length(w)>0) {
+      warninglist <- do.call(tags$ul, lapply(w, tags$li))
+      tagList(h2("Data notes:"), warninglist)
     }
   })
   
