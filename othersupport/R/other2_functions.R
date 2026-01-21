@@ -89,6 +89,12 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
   cal <- cal2 |>
     summarize(effort=sum(effort), .by=year)
   
+  effort_plot <- plot_effort(date1, date2, budget, ef, cal2, cal, daterange)
+  list(calendar=cal, budget=ef, plot=effort_plot, error=error)
+}
+
+plot_effort <- function(date1, date2, budget, ef, cal2, cal, daterange) {
+  
   ## get start/end of full budget years
   ## needed to give the plot enough breathing room on the sides
   ## this is hacky...
@@ -128,7 +134,7 @@ process_effort <- function(date1, date2, effort, budget, daterange) {
     labs(x=NULL, y="Percent Effort") +
     fitto(2, yr)
 
-  list(calendar=cal, budget=ef, plot=effort_plot, error=error)
+
 }
 
 required_vars <- c("projecttitle", "awardnumber", "supportsource", 
