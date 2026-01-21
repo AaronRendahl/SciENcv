@@ -15,10 +15,18 @@ googledrive::drive_download(
 
 #file_xlsx <- "sample_v3.xlsx"
 file_xlsx <- "Sample Other Support v3.xlsx"
+
+for(f in list.files(path="othersupport/R", full.names = TRUE)) source(f)
 d <- read_effort(file_xlsx)
 p <- d$data |> prepare_projects()
 
+daterange <- get_data_range(d$data)
+
+i <- 1
+plot_effort(p$startdate[i], p$enddate[i], p$budget[i], p$effort[[i]], daterange)
+
 p$.plot[[2]]
+p$.budget[[2]]
 all_effort_plot(p)
 
 
