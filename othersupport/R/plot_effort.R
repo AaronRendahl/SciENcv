@@ -47,7 +47,7 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
 }
 
 all_effort_plot <- function(p) {
-  cal <- p |> select(shorttitle, commitment) |> unnest(commitment) |>
+  cal <- p |> select(shorttitle, calendar) |> unnest(calendar) |>
     summarize(effort=sum(effort), .by=year) |>
     mutate(x=as.Date(sprintf("%d-07-01", year))) |>
     mutate(eff=sapply(round(effort, 2), format),

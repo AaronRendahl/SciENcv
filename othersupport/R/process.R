@@ -1,5 +1,6 @@
 process_effort <- function(date1, date2, effort, budget) {
   w <- c()
+  effort <- effort$effort
   date1 <- as.Date(date1)
   date2 <- as.Date(date2)
   budget <- as.Date(budget)
@@ -55,33 +56,11 @@ process_effort <- function(date1, date2, effort, budget) {
   cal <- cal2 |>
     summarize(effort=sum(effort), .by=year)
   
-  list(calendar=cal, budget=ef, effort=cal2, error=w)
+  tibble(calendar=list(cal), .budget=list(ef), effort=list(cal2), errors=list(w))
 }
 
 
 prepare_projects <- function(dat) { 
-  row2list <- function(dat1) {
-    d1 <- dat1 |> select(!starts_with("year "))
-    d2 <- dat1 |> select(starts_with("year "))
-    budget_start <- dat1$budget
-    if(is.na(budget_start)) {
-      budget_start <- dat1$startdate
-    }
-    ## grab the effort columns
-    effort <- d2 |> pivot_longer(starts_with("year "), names_to=c("X", "year"), 
-                                 names_sep=" ", values_to="effort") |>
-      select(year, effort) |> arrange(year) |> filter(!is.na(effort)) |> pull(effort)
-    
-    ## if there is any effort, process it and add it to the data set
-    if(length(effort) > 0) {
-      message(dat1$shorttitle)
-      ef <- process_effort(dat1$startdate, dat1$enddate, effort, budget_start)
-      d1$commitment <- list(ef$calendar)
-      d1$.budget <- list(ef$budget)
-      d1$effort <- list(ef$effort)
-      d1$.error <- list(ef$error)
-    }
-    d1
-  }
-  bind_rows(lapply(seq_len(nrow(dat)), \(idx) row2list(dat[idx,])))
+  dat |> select(shorttitle, startdate, enddate, budget, effort) |> rowwise() |>
+    mutate(process_effort(startdate, enddate, effort, budget)) |> ungroup()
 }

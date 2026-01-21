@@ -15,8 +15,8 @@ read_effort <- function(file) {
            sprintf("Name mismatch: column %s should be named '%s'.",
                    which(oops), nexp[oops]))
   }
-  years <- str_subset(names(d), "^year [0-9]+$")
-  if(length(years)==0) {
+  year_vars <- str_subset(names(d), "^year [0-9]+$")
+  if(length(year_vars)==0) {
     e <- c(e, "No years of effort found.")
   }
   # other things to check??
@@ -34,7 +34,7 @@ read_effort <- function(file) {
   # awardamount is an integer
   
   # unneeded columns
-  hmm <- setdiff(names(d), c(nexp, years, start_var, "method"))
+  hmm <- setdiff(names(d), c(nexp, year_vars, start_var, "method"))
   if(length(hmm) > 0) {
     hmm <- paste0("'", hmm, "'")
     w <- c(w, sprintf("Ignored variables: %s", paste(hmm, sep=", ")))    
@@ -50,7 +50,13 @@ read_effort <- function(file) {
       mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
       mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>
       mutate(shorttitle=as_factor(shorttitle))
+    d <- d |> nest(effort=all_of(year_vars)) |> mutate(effort=map(effort, \(x) {
+      x |> pivot_longer(all_of(year_vars), 
+                        names_to=c("X", "year"), names_sep=" ",
+                        values_to="effort", values_drop_na = TRUE) |>
+        mutate(year=as.integer(year)) |> select(-X)
+    }))
   }
   
-  list(error=e, warning=w, data=d)
+  list(errors=e, warnings=w, data=d)
 }

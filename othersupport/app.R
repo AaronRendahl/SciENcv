@@ -72,22 +72,20 @@ server <- function(input, output, session) {
     }
   })
   output$error_read <- renderUI({
-    e <- raw_data()$error
+    e <- raw_data()$errors
     if(length(e)>0) {
       errorlist <- do.call(tags$ul, lapply(e, tags$li))
       tagList(h2("Data error:"), errorlist)
     }
   })
   output$warning_read <- renderUI({
-    w <- raw_data()$warning
+    w <- raw_data()$warnings
     if(ok()) {
       p <- data()
-      ne <- length(unlist(p$.error))
+      ne <- length(unlist(p$errors))
       if(ne > 0) w <- c(w, sprintf("%d per-project warnings; see below.", ne))
     }
-    message(paste(w, collapse="\n"))
     nw <- length(w)
-    message(nw)
     tagList(
       if(nw > 0) {
         tagList(
@@ -127,8 +125,8 @@ server <- function(input, output, session) {
       tagList(
         h2(p$shorttitle[i]),
         tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
-        if(length(p$.error[[i]])>0) {
-          errorlist <- do.call(tags$ul, lapply(p$.error[[i]], tags$li))
+        if(length(p$errors[[i]])>0) {
+          errorlist <- do.call(tags$ul, lapply(p$errors[[i]], tags$li))
           tagList(tags$h5("WARNING:"), errorlist)
         },
         renderTable(budgeti),
@@ -148,7 +146,7 @@ server <- function(input, output, session) {
     tagList(
       h2("All Projects"),
       renderTable({
-        p |> select(shorttitle, commitment) |> unnest(commitment) |>
+        p |> select(shorttitle, calendar) |> unnest(calendar) |>
           arrange(year) |>
           pivot_wider(names_from=year, values_from=effort)
       }, na=""),

@@ -4,8 +4,8 @@ row_to_xml <- function(dat1, current_year) {
   ## where each element has to be a list,
   ## and missing values should be empty lists
   d1.list <- lapply(d1, \(x) if(is.na(x)) list() else list(x))
-  if("commitment" %in% names(dat1)) {
-    d2 <- dat1$commitment[[1]] |> mutate(effort=round(effort, 2)) |>
+  if("calendar" %in% names(dat1)) {
+    d2 <- dat1$calendar[[1]] |> mutate(effort=round(effort, 2)) |>
       filter(year >= current_year, effort > 0)
     d2.list <- map2(d2$year, d2$effort, \(y, e) {
       list(personmonth = structure(list(e), year = y))
