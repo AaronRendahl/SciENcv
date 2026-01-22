@@ -18,17 +18,16 @@ file_xlsx <- "Sample Other Support v3.xlsx"
 
 for(f in list.files(path="othersupport/R", full.names = TRUE)) source(f)
 d <- read_effort(file_xlsx)
-p <- d$data |> prepare_projects()
-d$warning
-p$.error
+dat <- d$data
+p <- dat |> prepare_projects()
 
-daterange <- get_data_range(d$data)
+rr <- get_data_range(p)
+plot_effort(p$effort[[1]], rr)
+plot_effort(p$effort[[2]], rr)
+plot_effort(p$effort[[3]], rr)
+plot_effort(p$effort[[4]], rr)
+plot_effort(p$effort[[5]], rr)
 
-i <- 1
-plot_effort(p$startdate[i], p$enddate[i], p$budget[i], p$effort[[i]], daterange)
-
-p$.plot[[2]]
-p$.budget[[2]]
 all_effort_plot(p)
 
 

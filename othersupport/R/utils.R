@@ -26,12 +26,11 @@ get_range <- function(date1, date2, budget) {
   bx[bx >= bb1 & bx <= bb2]
 }
 
-get_data_range <- function(dat) {
-  rr <- lapply(seq_len(nrow(dat)), \(idx) range(get_range(dat$startdate[[idx]], dat$enddate[[idx]], dat$budget[[idx]])))
-  rr1 <- range(do.call(c, rr))
-  rr2 <- range(as.Date(sprintf("%d-01-01",range(c(year(dat$startdate), year(dat$enddate-1)+1)))))
-  rr <- range(c(rr1, rr2))
-  rr
+get_data_range <- function(p) {
+  px <- p |> select(shorttitle, effort) |> unnest(effort) |>
+    mutate(startdate=pmin(startdate, lead(startdate, default=as.Date("2999-01-01")) - years(1)), .by=shorttitle) 
+  range(min(px$startdate), max(px$startdate + years(1)),
+        as.Date(sprintf("%d-01-01", c(min(px$calendar), max(px$calendar) + 1))))
 }
 
 getsize <- function(ggobj) {

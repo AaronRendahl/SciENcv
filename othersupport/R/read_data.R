@@ -34,29 +34,60 @@ read_effort <- function(file) {
   # awardamount is an integer
   
   # unneeded columns
-  hmm <- setdiff(names(d), c(nexp, year_vars, start_var, "method"))
-  if(length(hmm) > 0) {
-    hmm <- paste0("'", hmm, "'")
-    w <- c(w, sprintf("Ignored variables: %s", paste(hmm, sep=", ")))    
+  extra_vars <- setdiff(names(d), c(nexp, year_vars, start_var, "method"))
+  if(length(extra_vars) > 0) {
+    w <- c(w, sprintf("Ignored variables: %s", paste(paste0("'", extra_vars, "'"), sep=", ")))    
   }
-  
   
   if(length(e)>0) {
     d <- FALSE
   } else {
-    d <- d |> mutate(awardamount=as.integer(awardamount)) |>
-      rename(c(budget=any_of(start_var))) |>
-      mutate(budget=if_else(is.na(budget), startdate, budget)) |>
+
+    d <- d |> 
+      select(-all_of(extra_vars)) |>
+      mutate(awardamount=as.integer(awardamount)) |>
+      rename(c(budgetdate=any_of(start_var))) |>
+      mutate(budgetdate=if_else(is.na(budgetdate), startdate, budgetdate)) |>
+      mutate(across(ends_with("date"), as.Date)) |>
       mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
       mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>
-      mutate(shorttitle=as_factor(shorttitle))
-    d <- d |> nest(effort=all_of(year_vars)) |> mutate(effort=map(effort, \(x) {
+      mutate(shorttitle=as_factor(shorttitle)) |>
+      create_budget()
+  }
+  list(errors=e, warnings=w, data=d)
+}
+
+add_budget_dates <- function(date1, date2, date0, budget) {  
+  w <- character()
+  if(day(date0) == day(date2)) {
+    date2 <- date2 - 1
+    w <- c(w, "Moving last day back a day...")
+  }
+  ## get budget year start dates (this is a bit of a hack...)
+  ## including the start of the year after it ends
+  years <- year(date1):year(date2+1)
+  budgets <- as.Date(sprintf("%d-%02d-%02d", years, month(date0), day(date0)))
+  budgets <- c(date1, budgets[budgets > date1 & budgets < date2], date2+1)
+  budgets <- tibble(startdate=budgets[-length(budgets)], enddate=budgets[-1]-1) |> 
+    mutate(year=1:n(), .before=1)
+  budget <- full_join(budgets, budget, by="year") |> arrange(year)
+  tibble(budget=list(budget), warnings=list(w))
+}
+
+create_budget <- function(dat) {
+  year_vars <- str_subset(names(dat), "^year [0-9]+$")
+  dat |> nest(budget=all_of(year_vars)) |> 
+    mutate(budget=map(budget, \(x) {
       x |> pivot_longer(all_of(year_vars), 
                         names_to=c("X", "year"), names_sep=" ",
                         values_to="effort", values_drop_na = TRUE) |>
-        mutate(year=as.integer(year)) |> select(-X)
-    }))
-  }
-  
-  list(errors=e, warnings=w, data=d)
+        mutate(year=as.integer(year)) |> select(-X) |> arrange(year)
+    })) |> rowwise() |>
+    mutate(add_budget_dates(startdate, enddate, budgetdate, budget)) |> ungroup() |>
+    ## this error checking really belongs in add_budget_dates
+    ## but I can't easily combine all the results together right now
+    #mutate(warnings=if_else(day(budgetdate) == day(enddate), list("Moving last day back a day..."), list(character()))) |>
+    select(-budgetdate)
 }
+
+

@@ -67,8 +67,7 @@ server <- function(input, output, session) {
   
   daterange <- reactive({
     if(ok()) {
-      dat <- raw_data()$data
-      get_data_range(dat)
+      get_data_range(data())
     }
   })
   output$error_read <- renderUI({
@@ -115,13 +114,12 @@ server <- function(input, output, session) {
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
       message(sprintf("rendering project %d/%d...", i, n))
-      ploti <- plot_effort(p$startdate[i], p$enddate[i], p$budget[i], p$effort[[i]], daterange())
+      ploti <- plot_effort(p$effort[[i]], daterange())
       wh <- getsize(ploti)
-      budgeti <- p$.budget[[i]] |> 
-        mutate("Budget Year" = 1:n(), .before=1) |>
-        mutate(months=monthdiff(b1, b2+1), .after="b2") |>
-        rename(start=b1, end=b2, "person-months effort"=effort) |>
-        mutate(across(c(start, end), format))
+      budgeti <- p$budget[[i]] |> 
+        mutate(months=monthdiff(startdate, enddate+1), .after="enddate") |>
+        rename("person-months effort"=effort) |>
+        mutate(across(c(startdate, enddate), format))
       tagList(
         h2(p$shorttitle[i]),
         tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),

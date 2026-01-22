@@ -1,30 +1,37 @@
-plot_effort <- function(date1, date2, budget, cal2, daterange) {
-  ef <- cal2 |> summarize(b1=min(start), b2=max(end), effort=sum(effort), .by=budget)
+plot_effort <- function(effort, daterange) {
+  date1 <- min(effort$startdate)
+  date2 <- max(effort$enddate)
+  date0 <- effort$startdate[nrow(effort)]
+
+  budget <- effort |> summarize(b1=min(startdate), b2=max(enddate), effort=sum(effort), .by=year)
+  calendar <- effort |> summarize(effort=sum(effort), .by=calendar) |> rename(year=calendar)
   
-  ## get start/end of full budget years
-  ## needed to give the plot enough breathing room on the sides
-  ## this is hacky...
-  budget_range <- get_range(date1, date2, budget)
-  if(missing(daterange)) {daterange <- budget_range}
-  
-  ef_txt <- ef |> mutate(months=monthdiff(b1, b2+1), efper=effort/months,
-                         by=seq_len(n())) |>
+  budget_txt <- budget |> mutate(months=monthdiff(b1, b2+1), efper=effort/months) |>
     mutate(txt=sprintf("Budget Year %d:\n%s months effort\nover %s months\n(%s per month)", 
-                       by, round2(effort), round2(months), 
+                       year, round2(effort), round2(months), 
                        round2(efper))) |>
-    mutate(x=budget_range[-length(budget_range)] + months(6))
-  
-  cal2_txt <- cal2 |> mutate(txt=sapply(round(effort, 2), format)) |>
-    mutate(mid=monthmid(start, end))
-  cal <- cal2 |>
-    summarize(effort=sum(effort), .by=year)
-  cal_txt <- cal |> mutate(x=as.Date(sprintf("%d-07-01", year))) |>
+      mutate(x1=pmin(b1, lead(b1, default=as.Date("2999-01-01")) - years(1)), 
+             x=x1 + months(6))
+  calendar_txt <- calendar |> 
+    mutate(x=as.Date(sprintf("%d-07-01", year))) |>
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
-  years <- cal$year
+  effort_txt <- effort |> mutate(txt=sapply(round(effort, 2), format)) |>
+    mutate(mid=monthmid(startdate, enddate))
   
+  years <- calendar$year
+
+  plot_range <- range(
+    as.Date(sprintf("%d-01-01", years[1])),
+    budget_txt$x1[1],
+    budget_txt$b1[nrow(ef_txt)] + years(1),
+    as.Date(sprintf("%d-01-01", years[nrow(calendar)]+1)))
+  if(missing(daterange)) {daterange <- plot_range}
+  
+  budget_range <- c(budget_txt$x1, budget_txt$x1[nrow(budget_txt)] + years(1))
+    
   yr <- monthdiff(min(daterange), max(daterange))/12
-  effort_plot <- ggplot(ef_txt) + aes(xmin=b1, xmax=b2, ymin=0, ymax=efper) + 
+  effort_plot <- ggplot(budget_txt) + aes(xmin=b1, xmax=b2, ymin=0, ymax=efper) + 
     geom_rect(fill="gray90", color="gray50") +
     theme_minimal() +
     theme(axis.text.x = element_text(color=year_color)) +
@@ -39,8 +46,8 @@ plot_effort <- function(date1, date2, budget, cal2, daterange) {
     geom_text(aes(x=x, y=Inf, label=txt), size=6/.pt, vjust=1, hjust=0.5) +
     coord_cartesian(clip="off") +
     expand_limits(x=daterange, y=1) +
-    geom_text(aes(x=mid, y=0, label=txt), data=cal2_txt, vjust=-0.5, inherit.aes=FALSE, size=8/.pt, color=year_color) +
-    geom_text(aes(x=x, y=max(c(ef_txt$efper, 1))/2, label=txt), data=cal_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
+    geom_text(aes(x=mid, y=0, label=txt), data=effort_txt, vjust=-0.5, inherit.aes=FALSE, size=8/.pt, color=year_color) +
+    geom_text(aes(x=x, y=max(c(ef_txt$efper, 1))/2, label=txt), data=calendar_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
     labs(x=NULL, y="Percent Effort") +
     fitto(2, yr)
   effort_plot
@@ -53,10 +60,12 @@ all_effort_plot <- function(p) {
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
   
-  b <- p |> select(shorttitle, budget=.budget) |>
+  p |> select(shorttitle, effort) |> unnest(effort)
+  
+  b <- p |> select(shorttitle, budget) |>
     unnest(budget) |> mutate(row=seq_len(n()), .before=1)
-  dx <- sort(unique(c(b$b1, b$b2)))
-  ef_all <- b |> cross_join(tibble(d1=dx)) |> filter(d1>=b1 & d1<=b2) |> arrange(row) |> 
+  dx <- sort(unique(c(b$startdate, b$enddate)))
+  ef_all <- b |> cross_join(tibble(d1=dx)) |> filter(d1>=startdate & d1<=enddate) |> arrange(row) |> 
     mutate(d2=lead(d1), dif=monthdiff(d1, d2), 
            p=dif/sum(dif, na.rm=TRUE), 
            ef=effort*p,
