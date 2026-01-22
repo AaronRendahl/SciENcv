@@ -21,7 +21,14 @@ d <- read_effort(file_xlsx)
 dat <- d$data
 p <- dat |> prepare_projects()
 
+names(dat)
+names(p)
+dat$budget[[4]]
+p$calendar[[4]]
+p$effort[[4]]
+
 rr <- get_data_range(p)
+rr
 plot_effort(p$effort[[1]], rr)
 plot_effort(p$effort[[2]], rr)
 plot_effort(p$effort[[3]], rr)

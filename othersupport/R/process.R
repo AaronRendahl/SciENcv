@@ -1,6 +1,6 @@
 
 
-prorate_effort <- function(budget) {
+effort_prorate <- function(budget) {
   date1 <- min(budget$startdate, na.rm=TRUE)
   date2 <- max(budget$enddate, na.rm=TRUE)
   
@@ -34,7 +34,8 @@ prorate_effort <- function(budget) {
     mutate(year=1:n(), calendar_1=year(startdate), calendar_2=year(enddate)) |>
     select(year, contains("_")) |>
     pivot_longer(contains("_"), names_to=c(".value", "X"), names_sep="_") |>
-    filter(effort > 0) |> select(-X) |> relocate(effort, .after="calendar")
+    filter(effort > 0) |> select(-X) |> relocate(effort, .after="calendar") |>
+    mutate(calendar=as.integer(calendar))
 
   calendar <- effort |>
     summarize(effort=sum(effort), .by=calendar) |> rename(year=calendar)
@@ -42,7 +43,36 @@ prorate_effort <- function(budget) {
   tibble(calendar=list(calendar), effort=list(effort), errors=list(e))
 }
 
+effort_start <- function(budget) {
+  effort <- budget |> mutate(calendar=year(startdate) |> as.integer()) |> 
+    relocate("calendar", .before="effort")
+  calendar <- effort |> select(year=calendar, effort)
+  e <- character()
+  if(any(duplicated(calendar$year))) {
+    e <- c(e, "Calendar year duplicated.")
+  }
+  tibble(calendar=list(calendar), effort=list(effort), errors=list(e))
+}
+
+effort_end <- function(budget) {
+  effort <- budget |> mutate(calendar=year(enddate) |> as.integer()) |> 
+    relocate("calendar", .before="effort")
+  calendar <- effort |> select(year=calendar, effort)
+  e <- character()
+  if(any(duplicated(calendar$year))) {
+    e <- c(e, "Calendar year duplicated.")
+  }
+  tibble(calendar=list(calendar), effort=list(effort), errors=list(e))
+}
+
+create_effort <- function(budget, method=c("prorate", "start", "end")) {
+  method <- match.arg(method)
+  case_when(method=="prorate" ~ effort_prorate(budget),
+            method=="start" ~ effort_start(budget),
+            method=="end" ~ effort_end(budget))
+}
+
 
 prepare_projects <- function(dat) { 
-  dat |> rowwise() |> mutate(prorate_effort(budget)) |> ungroup()
+  dat |> rowwise() |> mutate(create_effort(budget, method)) |> ungroup()
 }

@@ -28,7 +28,7 @@ read_effort <- function(file) {
   
   # "method"
   if(!"method" %in% names(d)) {
-    d$method <- "PRORATE"
+    d$method <- NA
   }
   # any(duplicated(dat$shorttitle)) 
   # awardamount is an integer
@@ -42,12 +42,12 @@ read_effort <- function(file) {
   if(length(e)>0) {
     d <- FALSE
   } else {
-
     d <- d |> 
       select(-all_of(extra_vars)) |>
       mutate(awardamount=as.integer(awardamount)) |>
       rename(c(budgetdate=any_of(start_var))) |>
       mutate(budgetdate=if_else(is.na(budgetdate), startdate, budgetdate)) |>
+      mutate(method=replace_na(method, "prorate")) |>
       mutate(across(ends_with("date"), as.Date)) |>
       mutate(shorttitle=shorttitle |> replace_na("_blank_")) |>
       mutate(shorttitle=paste0(shorttitle, if(n()>1) paste0("-", 1:n()) else ""), .by=shorttitle) |>

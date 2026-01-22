@@ -114,21 +114,26 @@ server <- function(input, output, session) {
     n <- nrow(p)
     tagList(lapply(seq_len(n), \(i) {
       message(sprintf("rendering project %d/%d...", i, n))
-      ploti <- plot_effort(p$effort[[i]], daterange())
-      wh <- getsize(ploti)
+      method <- p$method[i]
       budgeti <- p$budget[[i]] |> 
         mutate(months=monthdiff(startdate, enddate+1), .after="enddate") |>
-        rename("person-months effort"=effort) |>
+        mutate(across(c(startdate, enddate), format))
+      efforti <- p$effort[[i]] |>
         mutate(across(c(startdate, enddate), format))
       tagList(
         h2(p$shorttitle[i]),
-        tag("p", sprintf("%s to %s", format(p$startdate[i]), format(p$enddate[i]))),
+        tag("p", sprintf("budget period: %s to %s", format(p$startdate[i]), format(p$enddate[i]))),
+        tag("p", sprintf("using '%s' method", method)),
         if(length(p$errors[[i]])>0) {
           errorlist <- do.call(tags$ul, lapply(p$errors[[i]], tags$li))
           tagList(tags$h5("WARNING:"), errorlist)
         },
-        renderTable(budgeti),
-        renderPlot(ploti, width=wh[1]*res, height=wh[2]*res, res=res)
+        if(method=="prorate") renderTable(budgeti) else renderTable(efforti),
+        if(method=="prorate") {
+          ploti <- plot_effort(p$effort[[i]], daterange())
+          wh <- getsize(ploti)
+          renderPlot(ploti, width=wh[1]*res, height=wh[2]*res, res=res)
+        }
       )
     }))
     }
@@ -138,17 +143,20 @@ server <- function(input, output, session) {
   output$plot_all <- renderUI({
     if(ok()) {
     p <- data()
-    plot_all <- all_effort_plot(p) +
-      theme(legend.position = "bottom")
-    wh <- getsize(plot_all)
+    #plot_all <- all_effort_plot(p) +
+    #  theme(legend.position = "bottom")
+    #wh <- getsize(plot_all)
     tagList(
       h2("All Projects"),
       renderTable({
-        p |> select(shorttitle, calendar) |> unnest(calendar) |>
+        p |> 
+          select(shorttitle, calendar) |> unnest(calendar) |>
+          summarize(effort=sum(effort), .by=c(shorttitle, year)) |>
           arrange(year) |>
-          pivot_wider(names_from=year, values_from=effort)
-      }, na=""),
-      renderPlot(plot_all, width=wh[1]*res, height=wh[2]*res, res=res)
+          pivot_wider(names_from=year, values_from=effort) |>
+          arrange(shorttitle)
+      }, na="")#,
+      #renderPlot(plot_all, width=wh[1]*res, height=wh[2]*res, res=res)
     )
     }
   })

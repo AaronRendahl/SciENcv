@@ -24,7 +24,7 @@ plot_effort <- function(effort, daterange) {
   plot_range <- range(
     as.Date(sprintf("%d-01-01", years[1])),
     budget_txt$x1[1],
-    budget_txt$b1[nrow(ef_txt)] + years(1),
+    budget_txt$b1[nrow(effort_txt)] + years(1),
     as.Date(sprintf("%d-01-01", years[nrow(calendar)]+1)))
   if(missing(daterange)) {daterange <- plot_range}
   
@@ -47,7 +47,7 @@ plot_effort <- function(effort, daterange) {
     coord_cartesian(clip="off") +
     expand_limits(x=daterange, y=1) +
     geom_text(aes(x=mid, y=0, label=txt), data=effort_txt, vjust=-0.5, inherit.aes=FALSE, size=8/.pt, color=year_color) +
-    geom_text(aes(x=x, y=max(c(ef_txt$efper, 1))/2, label=txt), data=calendar_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
+    geom_text(aes(x=x, y=max(c(budget_txt$efper, 1))/2, label=txt), data=calendar_txt, inherit.aes=FALSE, size=10/.pt, color=year_color) +
     labs(x=NULL, y="Percent Effort") +
     fitto(2, yr)
   effort_plot
@@ -60,7 +60,7 @@ all_effort_plot <- function(p) {
     mutate(eff=sapply(round(effort, 2), format),
            txt=sprintf("Year %d\n%s month%s", year, eff, if_else(eff=="1", "", "s")))
   
-  p |> select(shorttitle, effort) |> unnest(effort)
+  #p |> select(shorttitle, effort) |> unnest(effort)
   
   b <- p |> select(shorttitle, budget) |>
     unnest(budget) |> mutate(row=seq_len(n()), .before=1)
